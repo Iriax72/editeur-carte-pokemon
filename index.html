@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier de cartes TCG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-kind="pokemon">
+<header class="top"><h1>Atelier de cartes</h1><p>Créez, ajustez, téléchargez et imprimez votre carte.</p></header>
+
+<main class="layout">
+  <section class="preview" aria-label="Aperçu de la carte">
+    <canvas id="card" width="1260" height="1760"></canvas>
+    <div class="actions">
+      <select id="fmt" aria-label="Format d'export">
+        <option value="png">PNG (qualité maximale)</option>
+        <option value="jpeg">JPEG (léger)</option>
+        <option value="webp">WebP (léger et net)</option>
+      </select>
+      <button id="dl" class="btn hot">Télécharger</button>
+    </div>
+  </section>
+
+  <form class="editor" id="form" onsubmit="return false">
+    <fieldset>
+      <legend>Type de carte</legend>
+      <select data-k="kind">
+        <option value="pokemon">Pokémon</option>
+        <option value="trainer">Dresseur</option>
+        <option value="energy">Énergie</option>
+      </select>
+    </fieldset>
+
+    <fieldset data-show="pokemon energy">
+      <legend>Type élémentaire</legend>
+      <div class="picker" id="typePicker"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Identité</legend>
+      <label>Nom<input data-k="name" maxlength="30"></label>
+      <div class="row">
+        <label data-show="pokemon">Stade
+          <select data-k="stage"><option>De base</option><option>Niveau 1</option><option>Niveau 2</option></select>
+        </label>
+        <label data-show="pokemon">PV<input data-k="hp" inputmode="numeric" maxlength="4"></label>
+        <label data-show="trainer">Sous-type
+          <select data-k="subtype"><option>Objet</option><option>Supporter</option><option>Stade</option><option>Outil Pokémon</option></select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Illustration</legend>
+      <label>Image<input type="file" id="file" accept="image/*"></label>
+      <label>Zoom<input type="range" data-k="zoom" min="1" max="3" step="0.02"></label>
+      <label>Position horizontale<input type="range" data-k="ox" min="-100" max="100"></label>
+      <label>Position verticale<input type="range" data-k="oy" min="-100" max="100"></label>
+      <button type="button" class="btn ghost" id="rmImg">Retirer l'image</button>
+    </fieldset>
+
+    <fieldset data-show="pokemon">
+      <legend>Attaques</legend>
+      <div id="attacks"></div>
+    </fieldset>
+
+    <fieldset data-show="pokemon">
+      <legend>Faiblesse, résistance, retraite</legend>
+      <div class="row">
+        <label>Faiblesse<select class="typesel" data-k="weak.type"></select></label>
+        <label>Valeur<input data-k="weak.value" maxlength="5"></label>
+      </div>
+      <div class="row">
+        <label>Résistance<select class="typesel" data-k="resist.type"></select></label>
+        <label>Valeur<input data-k="resist.value" maxlength="5"></label>
+      </div>
+      <label>Coût de retraite<input type="range" data-k="retreat" min="0" max="5" step="1"></label>
+    </fieldset>
+
+    <fieldset data-show="trainer energy">
+      <legend>Effet de la carte</legend>
+      <textarea data-k="text" rows="5" maxlength="400"></textarea>
+    </fieldset>
+
+    <fieldset>
+      <legend>Finitions</legend>
+      <label>Texte d'ambiance<textarea data-k="flavor" rows="3" maxlength="220"></textarea></label>
+      <div class="row">
+        <label>Illustrateur<input data-k="illustrator" maxlength="30"></label>
+        <label>Numéro<input data-k="number" maxlength="10"></label>
+      </div>
+      <div class="row">
+        <label>Extension<input data-k="set" maxlength="20"></label>
+        <label>Rareté
+          <select data-k="rarity"><option>●</option><option>◆</option><option>★</option><option>★★</option></select>
+        </label>
+      </div>
+      <button type="button" class="btn ghost" id="reset">Nouvelle carte</button>
+    </fieldset>
+  </form>
+</main>
+<div id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
