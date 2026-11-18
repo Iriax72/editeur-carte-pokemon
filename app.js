@@ -20,7 +20,8 @@ const DEFAULT = () => ({
   ],
   weak: { type: 'water', value: '×2' }, resist: { type: '', value: '' }, retreat: 1,
   text: '', flavor: 'La flamme au bout de sa queue indique sa santé.',
-  illustrator: '', number: '001/100', set: '', rarity: '●',
+  illustrator: '', number: '4/149', legal: '', rarity: '●',
+  info: 'N° 004  Pokémon Lézard  Taille : 0,6 m  Poids : 8,5 kg',
   img: null, zoom: 1, ox: 0, oy: 0
 });
 
@@ -65,33 +66,50 @@ function wrap(c, t, w) {
 }
 function fit(c, txt, size, maxW, style = 'bold') { do { c.font = `${style} ${size}px ${FONT}`; size--; } while (c.measureText(txt).width > maxW && size > 14); }
 
-/* ============ Rendu de la carte ============ */
+/* ============ Rendu de la carte (modèle Soleil et Lune) ============ */
+const logo = new Image();
+logo.onload = () => { logo.ok = true; redraw(); };
+logo.onerror = () => { if (!logo.png) { logo.png = 1; logo.src = 'assets/set/logo.png'; } };
+logo.src = 'assets/set/logo.svg';
+
+function pill(c, x, y, w, h, r) {
+  rr(c, x, y, w, h, r); c.fillStyle = lin(c, 0, y, 0, y + h, ['#fbfcfd', '#c6cad1', '#e2e5e9']); c.fill();
+  c.lineWidth = 1.2; c.strokeStyle = '#767c85'; c.stroke();
+}
 function draw(o = {}) {
   const assets = o.assets !== false, c = ctx, k = state.kind;
   c.setTransform(S, 0, 0, S, 0, 0); c.clearRect(0, 0, W, H); c.textBaseline = 'alphabetic'; c.textAlign = 'left';
   if (o.bg) { c.fillStyle = '#fff'; c.fillRect(0, 0, W, H); }
-  const base = k === 'trainer' ? '#e8e2d2' : TYPES[state.type][1];
-  const ink = lum(base) > .6 ? '#1b1b24' : '#ffffff';
-  c.save(); rr(c, 0, 0, W, H, 34); c.clip();
-  c.fillStyle = lin(c, 0, 0, W, H, ['#fbeb8a', '#c9a227', '#f6e07a', '#b58a1c', '#f3dc7a']); c.fillRect(0, 0, W, H);
-  rr(c, 22, 22, W - 44, H - 44, 18); c.fillStyle = lin(c, 0, 0, W, H, [mix(base, 255, .35), base, mix(base, 0, .18)]); c.fill();
-  c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.55)'; c.stroke();
+  const base = k === 'trainer' ? '#d9d6ca' : TYPES[state.type][1];
+  const ink = lum(base) < .42 ? '#f4f4f8' : '#1a1a1a';
+  c.save(); rr(c, 0, 0, W, H, 30); c.clip();
+  c.fillStyle = lin(c, 0, 0, 0, H, ['#f9ea55', '#f1d92f', '#f6e445']); c.fillRect(0, 0, W, H);   // bordure jaune
+  c.save(); rr(c, 27, 27, W - 54, H - 54, 14); c.clip();                                           // fond du type
+  const g = c.createRadialGradient(W * .55, H * .62, 40, W * .55, H * .62, 640);
+  g.addColorStop(0, mix(base, 255, .3)); g.addColorStop(.55, base); g.addColorStop(1, mix(base, 0, .2));
+  c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore();
+  rr(c, 27, 27, W - 54, H - 54, 14); c.lineWidth = 2; c.strokeStyle = 'rgba(0,0,0,.4)'; c.stroke();
 
-  /* En-tête */
-  c.fillStyle = ink; c.font = `italic bold 17px ${FONT}`;
-  c.fillText(k === 'pokemon' ? state.stage : k === 'trainer' ? 'Dresseur · ' + state.subtype : 'Énergie', 48, 58);
-  const hasType = k !== 'trainer', hp = k === 'pokemon' && state.hp;
-  fit(c, state.name || 'Nom', 38, hasType ? (hp ? 340 : 440) : 530); c.fillText(state.name || 'Nom', 48, 98);
-  if (hasType) sym(c, state.type, 546, 56, 38, assets);
-  if (hp) { c.textAlign = 'right'; c.font = `bold 38px ${FONT}`; c.fillText(state.hp, 530, 98);
-    c.font = `bold 17px ${FONT}`; c.fillText('PV', 530 - c.measureText(state.hp).width - 0, 58); c.font = `bold 38px ${FONT}`;
-    c.textAlign = 'left'; }
+  /* En-tête : pastille de stade, nom, PV, type */
+  const label = k === 'pokemon' ? state.stage.toUpperCase() : k === 'trainer' ? state.subtype.toUpperCase() : 'ÉNERGIE';
+  c.font = `italic bold 15px ${FONT}`; const bw = Math.max(80, c.measureText(label).width + 28);
+  pill(c, 30, 42, bw, 27, 5);
+  c.fillStyle = '#2a2a2a'; c.textAlign = 'center'; c.fillText(label, 30 + bw / 2, 61); c.textAlign = 'left';
+  const nx0 = 30 + bw + 9, hasType = k !== 'trainer', hp = k === 'pokemon' && state.hp;
+  fit(c, state.name || 'Nom', 35, (hp ? 468 : hasType ? 548 : 596) - nx0);
+  c.fillStyle = ink; c.fillText(state.name || 'Nom', nx0, 67);
+  if (hp) {
+    c.textAlign = 'right'; c.font = `bold 37px ${FONT}`; c.fillText(state.hp, 548, 70);
+    const w = c.measureText(state.hp).width; c.font = `bold 14px ${FONT}`; c.fillText('PV', 544 - w, 70); c.textAlign = 'left';
+  }
+  if (hasType) sym(c, state.type, 556, 37, 38, assets);
 
-  /* Illustration */
-  const fx = 46, fy = 112, fw = 538, fh = 290;
-  rr(c, fx, fy, fw, fh, 8); c.fillStyle = lin(c, fx, fy, fx + fw, fy + fh, ['#f4f6fa', '#9aa3b2', '#eef1f6', '#7d8696', '#f4f6fa']); c.fill();
-  c.save(); rr(c, fx + 8, fy + 8, fw - 16, fh - 16, 4); c.clip();
-  const ix = fx + 8, iy = fy + 8, iw = fw - 16, ih = fh - 16;
+  /* Cadre argenté de l'illustration (+ bandeau d'info pour les Pokémon) */
+  const fx = 47, fy = 82, fw = 537, fh = 361, pk = k === 'pokemon';
+  rr(c, fx, fy, fw, fh, 6); c.fillStyle = lin(c, fx, fy, fx + fw, fy + fh, ['#f6f7f9', '#a9aeb6', '#eceef1', '#9097a0', '#f4f5f7']); c.fill();
+  c.lineWidth = 1.2; c.strokeStyle = '#6c727a'; c.stroke();
+  const ix = fx + 5, iy = fy + 5, iw = fw - 10, ih = pk ? 330 : 351;
+  c.save(); c.beginPath(); c.rect(ix, iy, iw, ih); c.clip();
   if (illu && illu.complete && illu.naturalWidth) {
     const sc = Math.max(iw / illu.naturalWidth, ih / illu.naturalHeight) * state.zoom;
     const dw = illu.naturalWidth * sc, dh = illu.naturalHeight * sc;
@@ -101,51 +119,47 @@ function draw(o = {}) {
     if (k === 'energy') sym(c, state.type, ix + iw / 2 - 100, iy + ih / 2 - 100, 200, assets);
     else { c.fillStyle = 'rgba(0,0,0,.28)'; c.font = `italic 20px ${FONT}`; c.textAlign = 'center'; c.fillText('Illustration', ix + iw / 2, iy + ih / 2 + 7); c.textAlign = 'left'; }
   }
-  c.restore();
+  c.restore(); c.lineWidth = 1; c.strokeStyle = 'rgba(0,0,0,.55)'; c.strokeRect(ix, iy, iw, ih);
+  if (pk) { fit(c, state.info, 12, 520, 'normal'); c.fillStyle = '#222'; c.textAlign = 'center'; c.fillText(state.info, fx + fw / 2, 435); c.textAlign = 'left'; }
 
   /* Corps */
-  const panel = (x, y, w, h) => { rr(c, x, y, w, h, 10); c.fillStyle = k === 'trainer' ? 'rgba(255,255,255,.6)' : mix(base, 255, .72); c.fill(); c.lineWidth = 1.5; c.strokeStyle = 'rgba(0,0,0,.18)'; c.stroke(); };
-  c.fillStyle = '#16161e';
-  if (k === 'pokemon') {
-    panel(46, 416, 538, 272);
+  c.fillStyle = ink;
+  if (pk) {
     const atks = state.attacks.filter(a => a.name || a.text);
-    const maxCost = Math.max(1, ...atks.map(a => a.cost.length)), nx = 58 + maxCost * 29 + 8;
+    const maxCost = Math.max(1, ...atks.map(a => a.cost.length)), nx = Math.max(203, 47 + maxCost * 31 + 10);
     c.font = `16px ${FONT}`;
-    const blocks = atks.map(a => ({ a, lines: a.text ? wrap(c, a.text, 506) : [] }));
-    const total = blocks.reduce((s, b) => s + 38 + b.lines.length * 20, 0), gap = Math.max(4, (272 - total) / (blocks.length + 1));
-    let y = 416 + gap;
-    blocks.forEach((b, i) => {
-      if (i) { c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(66, y - gap / 2, 498, 1.5); }
-      b.a.cost.slice(0, 5).forEach((t, j) => sym(c, t, 58 + j * 29, y + 2, 26, assets));
-      c.fillStyle = '#16161e'; fit(c, b.a.name, 26, 530 - nx - 90); c.fillText(b.a.name, nx, y + 25);
-      if (b.a.damage) { c.textAlign = 'right'; c.font = `bold 32px ${FONT}`; c.fillText(b.a.damage, 570, y + 28); c.textAlign = 'left'; }
-      c.font = `16px ${FONT}`; b.lines.forEach((l, j) => c.fillText(l, 60, y + 52 + j * 20));
-      y += 38 + b.lines.length * 20 + gap;
+    const bl = atks.map(a => ({ a, ls: a.text ? wrap(c, a.text, 526) : [] }));
+    const hh = b => b.ls.length ? 40 + b.ls.length * 19 : 36;
+    const gap = Math.max(6, (296 - bl.reduce((s, b) => s + hh(b), 0)) / (bl.length + 1));
+    let y = 448 + gap;
+    bl.forEach(b => {
+      b.a.cost.slice(0, 5).forEach((t, j) => sym(c, t, 47 + j * 31, y + 1, 29, assets));
+      c.fillStyle = ink; fit(c, b.a.name, 29, 500 - nx); c.fillText(b.a.name, nx, y + 23);
+      if (b.a.damage) { c.textAlign = 'right'; c.font = `bold 34px ${FONT}`; c.fillText(b.a.damage, 582, y + 24); c.textAlign = 'left'; }
+      c.font = `16px ${FONT}`; b.ls.forEach((l, j) => c.fillText(l, 50, y + 51 + j * 19));
+      y += hh(b) + gap;
     });
-    panel(46, 698, 538, 52);
-    [['faiblesse', 'weak', 148], ['résistance', 'resist', 315], ['retraite', null, 482]].forEach(([lab, key, cx]) => {
-      c.fillStyle = '#3b3b4a'; c.font = `bold 13px ${FONT}`; c.textAlign = 'center'; c.fillText(lab, cx, 714);
-      c.fillStyle = '#16161e'; c.font = `bold 20px ${FONT}`;
-      if (key) { const d = state[key]; if (d.type) { const w = c.measureText(d.value).width; sym(c, d.type, cx - (22 + w) / 2, 719, 22, assets); c.textAlign = 'left'; c.fillText(d.value, cx - (22 + w) / 2 + 26, 738); } else c.fillText('—', cx, 738); }
-      else if (+state.retreat) { const n = +state.retreat, x0 = cx - (n * 24) / 2; for (let i = 0; i < n; i++) sym(c, 'colorless', x0 + i * 24, 719, 22, assets); }
-      else c.fillText('—', cx, 738);
-      c.textAlign = 'left';
-    });
+    /* Barre faiblesse / résistance / retraite */
+    pill(c, 15, 753, 363, 29, 6); pill(c, 396, 753, 217, 29, 6);
+    c.fillStyle = '#1d1d1d'; c.font = `bold 15px ${FONT}`;
+    c.fillText('Faiblesse', 33, 773); c.fillText('Résistance', 209, 773); c.fillText('Retraite', 413, 773);
+    c.fillStyle = '#666'; c.fillRect(198, 758, 1.5, 19);
+    const tv = (d, x) => { if (!d.type) return; sym(c, d.type, x, 756.5, 22, assets); c.fillStyle = '#1d1d1d'; c.font = `bold 22px ${FONT}`; c.fillText(d.value, x + 26, 775); };
+    tv(state.weak, 103);
+    c.font = `bold 15px ${FONT}`; tv(state.resist, 209 + c.measureText('Résistance').width + 8);
+    for (let i = 0; i < +state.retreat; i++) sym(c, 'colorless', 480 + i * 24, 756.5, 22, assets);
   } else {
-    panel(46, 416, 538, 328);
-    c.fillStyle = '#16161e'; c.font = `20px ${FONT}`;
-    const ls = wrap(c, state.text, 500), y0 = 416 + 164 - (ls.length * 28) / 2 + 20;
-    c.textAlign = 'center'; ls.forEach((l, i) => c.fillText(l, 315, y0 + i * 28)); c.textAlign = 'left';
+    c.font = `18px ${FONT}`; wrap(c, state.text, 526).forEach((l, i) => c.fillText(l, 52, 482 + i * 25));
   }
 
-  /* Ambiance et pied de carte */
-  panel(46, 758, 538, 64);
-  c.fillStyle = '#2a2a38'; c.font = `italic 15px ${FONT}`;
-  const fl = wrap(c, state.flavor, 512).slice(0, 3), fy0 = 790 - (fl.length - 1) * 9 + 1;
-  c.textAlign = 'center'; fl.forEach((l, i) => c.fillText(l, 315, fy0 + i * 18)); c.textAlign = 'left';
-  c.fillStyle = ink; c.font = `bold 14px ${FONT}`;
-  if (state.illustrator) c.fillText('Illus. ' + state.illustrator, 48, 846);
-  c.textAlign = 'right'; c.fillText([state.set, state.number, state.rarity].filter(Boolean).join('  '), 582, 846);
+  /* Pied de carte : illustrateur, numéro, logo d'extension, mention, ambiance */
+  c.fillStyle = ink;
+  if (state.illustrator) { c.font = `italic bold 12px ${FONT}`; c.fillText('Illus. ' + state.illustrator, 38, 806); }
+  const hasLogo = assets && logo.ok; if (hasLogo) { const r = Math.min(26 / logo.naturalWidth, 26 / logo.naturalHeight, 1e3) || 1;
+    c.drawImage(logo, 38, 819, logo.naturalWidth * r, logo.naturalHeight * r); }
+  c.font = `15px ${FONT}`; c.fillText([state.number, state.rarity].filter(Boolean).join('  '), hasLogo ? 72 : 38, 835);
+  if (state.legal) { c.font = `9px ${FONT}`; c.fillText(state.legal, 42, 849); }
+  c.font = `14.5px ${FONT}`; wrap(c, state.flavor, 288).slice(0, 3).forEach((l, i) => c.fillText(l, 286, 803 + i * 18));
   c.restore();
 }
 let queued = false;
